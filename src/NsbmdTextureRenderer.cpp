@@ -24,7 +24,6 @@ void NsbmdTextureRenderer::uploadTextures(const std::vector<NitroTexture>& textu
         if (id == 0) continue;
 
         texAddrToGL_[tex.texAddr] = id;
-        std::printf("[GL] upload idx=%u -> textureID=%u\n", tex.texAddr, id);
     }
 }
 
@@ -96,16 +95,7 @@ void NsbmdTextureRenderer::render(bool wireframe, bool textured)
         if (textured)
         {
             auto it = texAddrToGL_.find(rm.texAddr);
-            if (it != texAddrToGL_.end())
-            {
-                glBindTexture(GL_TEXTURE_2D, it->second);
-                std::printf("[GL] bind idx=%u -> textureID=%u\n", rm.texAddr, it->second);
-            }
-            else
-            {
-                glBindTexture(GL_TEXTURE_2D, 0);
-                std::printf("[GL] bind idx=%u -> textureID=0 (missing)\n", rm.texAddr);
-            }
+            glBindTexture(GL_TEXTURE_2D, it != texAddrToGL_.end() ? it->second : 0);
         }
 
         const void* base = rm.vertices.data();
