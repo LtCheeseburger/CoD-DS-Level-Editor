@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include <QVector2D>
 #include <QVector3D>
 
 #include "GxTextureState.hpp"
@@ -23,6 +24,11 @@ namespace nitro
         bool experimental = true;
 
         std::vector<QVector3D> vertices;
+        std::vector<QVector2D> uvs;
+
+        // Triangle list (a,b,c ...)
+        std::vector<std::uint32_t> indices;
+
         std::vector<DecodedNsbmdEdge> edges;
 
         QVector3D minBounds {0.0f, 0.0f, 0.0f};
@@ -43,21 +49,13 @@ namespace nitro
 
         std::string diagnostics;
 
-        // 🔥 Texture state per vertex (NEW, required for TEXIMAGE_PARAM)
+        // Texture key per vertex
         std::vector<std::uint32_t> vertexTextureAddr;
     };
 
     class NsbmdGeometryDecoder
     {
     public:
-        // Experimental native NSBMD geometry decoder.
-        // GX parser supports:
-        // - packed commands
-        // - matrix stack
-        // - vertex decoding (VTX_16, VTX_10, VTX_DIFF)
-        // - primitive modes (triangles, quads, strips)
-        //
-        // Read-only decoder (no mutation of source data)
         static DecodedNsbmdMesh decodeWireframeMesh(const std::filesystem::path& path);
     };
 

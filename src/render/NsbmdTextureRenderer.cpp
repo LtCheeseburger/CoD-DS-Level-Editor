@@ -51,7 +51,13 @@ void NsbmdTextureRenderer::render(const std::vector<nitro::DecodedNsbmdMesh>& me
         GLuint texID = 0;
         std::uint32_t addr = 0;
 
-        if (!mesh.vertexTextureAddr.empty())
+        auto it = m_texAddrToGL.find(idx);
+        if (it != m_texAddrToGL.end())
+        {
+            texID = it->second;
+            std::printf("[GL] bind idx=%u -> textureID=%u\n", idx, texID);
+        }
+        else
         {
             addr = mesh.vertexTextureAddr[0];
             if (addr == 0)
@@ -75,6 +81,7 @@ void NsbmdTextureRenderer::render(const std::vector<nitro::DecodedNsbmdMesh>& me
             {
                 std::printf("[WARN] No texture for addr=0x%08X\n", addr);
             }
+            glEnd();
         }
 
         f->glBindTexture(GL_TEXTURE_2D, texID);
@@ -82,6 +89,9 @@ void NsbmdTextureRenderer::render(const std::vector<nitro::DecodedNsbmdMesh>& me
         glBegin(GL_LINES);
         for (const auto& e : mesh.edges)
         {
+            if (e.a >= mesh.vertices.size() || e.b >= mesh.vertices.size())
+                continue;
+
             const auto& a = mesh.vertices[e.a];
             const auto& b = mesh.vertices[e.b];
 
@@ -89,7 +99,11 @@ void NsbmdTextureRenderer::render(const std::vector<nitro::DecodedNsbmdMesh>& me
             glVertex3f(b.x(), b.y(), b.z());
         }
         glEnd();
+        glEnable(GL_TEXTURE_2D);
     }
+
+    f->glBindTexture(GL_TEXTURE_2D, 0);
+    f->glDisable(GL_TEXTURE_2D);
 }
 
 } // namespace render
