@@ -319,6 +319,8 @@ namespace nitro
         out.name   = tex.name;
         out.width  = tex.widthPx;
         out.height = tex.heightPx;
+        out.format = tex.format;
+        out.texAddr = tex.texAddr;
 
         if (tex.widthPx == 0 || tex.heightPx == 0)
         {
