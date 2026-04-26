@@ -1,5 +1,18 @@
 #include "NsbmdTextureRenderer.hpp"
 
+#include <QOpenGLContext>
+
+#ifdef _WIN32
+#  include <windows.h>
+#endif
+#ifndef GL_LINES
+#  ifdef __APPLE__
+#    include <OpenGL/gl.h>
+#  else
+#    include <GL/gl.h>
+#  endif
+#endif
+
 #include <cstdio>
 
 namespace render
@@ -13,10 +26,12 @@ void NsbmdTextureRenderer::setTextures(const std::vector<nitro::DecodedTexture>&
     for (const auto& tex : m_textures)
     {
         GLuint id = m_cache.upload(tex);
+        if (id == 0u)
+            continue;
 
         m_texAddrToGL[tex.texAddr] = id;
 
-        printf("[GL] Upload %s → addr=0x%08X id=%u\n",
+        std::printf("[GL] Upload %s -> addr=0x%08X id=%u\n",
             tex.name.c_str(),
             tex.texAddr,
             id);
@@ -25,32 +40,46 @@ void NsbmdTextureRenderer::setTextures(const std::vector<nitro::DecodedTexture>&
 
 void NsbmdTextureRenderer::render(const std::vector<nitro::DecodedNsbmdMesh>& meshes)
 {
-    QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
+    auto* ctx = QOpenGLContext::currentContext();
+    if (!ctx)
+        return;
+
+    QOpenGLFunctions* f = ctx->functions();
 
     for (const auto& mesh : meshes)
     {
         GLuint texID = 0;
+        std::uint32_t addr = 0;
 
         if (!mesh.vertexTextureAddr.empty())
         {
-            uint32_t addr = mesh.vertexTextureAddr[0];
+            addr = mesh.vertexTextureAddr[0];
+            if (addr == 0)
+            {
+                for (std::uint32_t candidate : mesh.vertexTextureAddr)
+                {
+                    if (candidate != 0)
+                    {
+                        addr = candidate;
+                        break;
+                    }
+                }
+            }
 
             auto it = m_texAddrToGL.find(addr);
             if (it != m_texAddrToGL.end())
             {
                 texID = it->second;
             }
-            else
+            else if (addr != 0)
             {
-                printf("[WARN] No texture for addr=0x%08X\n", addr);
+                std::printf("[WARN] No texture for addr=0x%08X\n", addr);
             }
         }
 
         f->glBindTexture(GL_TEXTURE_2D, texID);
 
-        // 🔥 KEEP YOUR EXISTING EDGE DRAWING
         glBegin(GL_LINES);
-
         for (const auto& e : mesh.edges)
         {
             const auto& a = mesh.vertices[e.a];
@@ -59,9 +88,8 @@ void NsbmdTextureRenderer::render(const std::vector<nitro::DecodedNsbmdMesh>& me
             glVertex3f(a.x(), a.y(), a.z());
             glVertex3f(b.x(), b.y(), b.z());
         }
-
         glEnd();
     }
 }
 
-}
+} // namespace render
