@@ -7,6 +7,7 @@
 
 #include "../nitro/NitroTexture.hpp"
 #include "GlTextureCache.hpp"
+#include "nitro/NsbmdGeometryDecoder.hpp"
 
 namespace render
 {
@@ -23,8 +24,8 @@ private:
 
     std::vector<nitro::DecodedTexture> m_textures;
 
-    // 🔥 NEW: texAddr → GL texture
-    std::unordered_map<uint32_t, GLuint> m_texAddrToGL;
+    // GX texAddr -> OpenGL texture object
+    std::unordered_map<std::uint32_t, GLuint> m_texAddrToGL;
 };
 
-}
+} // namespace render

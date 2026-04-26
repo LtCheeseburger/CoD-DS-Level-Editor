@@ -33,8 +33,8 @@ enum class NitroTexFmt : uint8_t
 //
 //  Key fields
 //  ----------
-//  texAddr  – GX address (texImageParam bits[15:0] << 3).
-//             The renderer uses this as the key in texAddrToGL.
+//  texAddr  – first-pass logical texture index used by renderer lookup.
+//             This is intentionally index-based for now.
 //  rgba8    – RGBA8 pixel data, width×height×4 bytes, row-major, Y-up.
 //             Populated by Tex0Parser::decode().
 // ---------------------------------------------------------------------------
@@ -43,8 +43,8 @@ struct NitroTexture
     // Identification
     std::string  name;          ///< Name from TEX0 section (null-terminated, max 16 chars)
 
-    // GX hardware address — primary lookup key
-    uint32_t     texAddr   = 0; ///< (texImageParam & 0xFFFF) << 3
+    // First-pass logical texture index used for GX->GL binding lookup
+    uint32_t     texAddr   = 0; ///< parser-assigned sequential index (0..N-1)
 
     // Raw TEX0 fields
     uint32_t     texImageParam = 0; ///< Full texImageParam word from TEX0 header
