@@ -65,7 +65,7 @@ void NsbmdTextureRenderer::uploadMeshes(const std::vector<DecodedNsbmdMesh>& mes
         if (m.vertices.empty() || m.indices.empty()) continue;
 
         RenderMeshGL rm;
-        rm.texAddr = m.representativeTexAddr();
+        rm.texAddr = m.vertexTextureAddr.empty() ? 0u : m.vertexTextureAddr[0];
 
         rm.vertices.reserve(m.vertices.size());
         for (const NsbmdVertex& v : m.vertices)
