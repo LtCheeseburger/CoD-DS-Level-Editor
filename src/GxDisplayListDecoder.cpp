@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+#include <cstdio>
 
 // ---------------------------------------------------------------------------
 // Parameter word counts per command (0 = command takes no params)
@@ -193,11 +194,12 @@ void GxDisplayListDecoder::processCommand(uint8_t cmd,
 
 // ---------------------------------------------------------------------------
 // TEXIMAGE_PARAM (0x2A)
-// Bits [15:0] × 8 = hardware texture address (in VRAM)
+// First-pass mapping: texture index from TEXIMAGE_PARAM bits [23:16]
 // ---------------------------------------------------------------------------
 void GxDisplayListDecoder::cmdTexImageParam(uint32_t param)
 {
-    currentTexAddr_ = (param & 0x0000FFFFu) << 3u;
+    currentTexAddr_ = (param >> 16) & 0xFFu;
+    std::printf("[GX] TEXIMAGE_PARAM idx=%u\n", currentTexAddr_);
 }
 
 // ---------------------------------------------------------------------------

@@ -34,6 +34,7 @@
 #include "Tex0Parser.hpp"
 
 #include <algorithm>
+#include <cstdio>
 #include <cassert>
 #include <cstring>
 #include <stdexcept>
@@ -169,7 +170,7 @@ ParsedTex0 Tex0Parser::parse(std::span<const uint8_t> tex0Data) const
         uint32_t texImageParam  = read32(ep + 0x04);
 
         tex.texImageParam  = texImageParam;
-        tex.texAddr        = nitroTexAddr(texImageParam);
+        tex.texAddr        = static_cast<uint32_t>(i);
         tex.width          = nitroTexWidth(texImageParam);
         tex.height         = nitroTexHeight(texImageParam);
         tex.format         = nitroTexFormat(texImageParam);
@@ -188,6 +189,7 @@ ParsedTex0 Tex0Parser::parse(std::span<const uint8_t> tex0Data) const
                      || tex.format == NitroTexFmt::Direct
                      || tex.format == NitroTexFmt::Compressed);
 
+        std::printf("[TEX0] name=%s idx=%u\n", tex.name.c_str(), tex.texAddr);
         result.textures.push_back(std::move(tex));
     }
 
@@ -220,8 +222,8 @@ void Tex0Parser::decode(ParsedTex0& parsed, std::span<const uint8_t> tex0Data) c
         if (!tex.isValid()) continue;
         if (!texData.empty())
         {
-            // Slice texData starting at texAddr (relative to texData start)
-            uint32_t offset = tex.texAddr;
+            // Use original TEX0/GX hardware address for data offset into TEX0 texData
+            uint32_t offset = nitroTexAddr(tex.texImageParam);
             if (offset < texData.size())
             {
                 std::span<const uint8_t> slicedTex = texData.subspan(offset);
