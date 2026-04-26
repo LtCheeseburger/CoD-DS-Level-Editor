@@ -5,7 +5,7 @@
 #ifdef _WIN32
 #  include <windows.h>
 #endif
-#ifndef GL_TRIANGLES
+#ifndef GL_LINES
 #  ifdef __APPLE__
 #    include <OpenGL/gl.h>
 #  else
@@ -30,7 +30,11 @@ void NsbmdTextureRenderer::setTextures(const std::vector<nitro::DecodedTexture>&
             continue;
 
         m_texAddrToGL[tex.texAddr] = id;
-        std::printf("[GL] upload idx=%u -> textureID=%u\n", tex.texAddr, id);
+
+        std::printf("[GL] Upload %s -> addr=0x%08X id=%u\n",
+            tex.name.c_str(),
+            tex.texAddr,
+            id);
     }
 }
 
@@ -41,12 +45,11 @@ void NsbmdTextureRenderer::render(const std::vector<nitro::DecodedNsbmdMesh>& me
         return;
 
     QOpenGLFunctions* f = ctx->functions();
-    f->glEnable(GL_TEXTURE_2D);
 
     for (const auto& mesh : meshes)
     {
         GLuint texID = 0;
-        const std::uint32_t idx = mesh.vertexTextureAddr.empty() ? 0u : mesh.vertexTextureAddr[0];
+        std::uint32_t addr = 0;
 
         auto it = m_texAddrToGL.find(idx);
         if (it != m_texAddrToGL.end())
@@ -56,29 +59,33 @@ void NsbmdTextureRenderer::render(const std::vector<nitro::DecodedNsbmdMesh>& me
         }
         else
         {
-            std::printf("[GL] bind idx=%u -> textureID=0 (missing)\n", idx);
-        }
-
-        f->glBindTexture(GL_TEXTURE_2D, texID);
-
-        if (!mesh.indices.empty() && mesh.vertices.size() == mesh.uvs.size())
-        {
-            glBegin(GL_TRIANGLES);
-            for (std::uint32_t vidx : mesh.indices)
+            addr = mesh.vertexTextureAddr[0];
+            if (addr == 0)
             {
-                if (vidx >= mesh.vertices.size())
-                    continue;
+                for (std::uint32_t candidate : mesh.vertexTextureAddr)
+                {
+                    if (candidate != 0)
+                    {
+                        addr = candidate;
+                        break;
+                    }
+                }
+            }
 
-                const auto& p = mesh.vertices[vidx];
-                const auto& uv = mesh.uvs[vidx];
-                glTexCoord2f(uv.x(), uv.y());
-                glVertex3f(p.x(), p.y(), p.z());
+            auto it = m_texAddrToGL.find(addr);
+            if (it != m_texAddrToGL.end())
+            {
+                texID = it->second;
+            }
+            else if (addr != 0)
+            {
+                std::printf("[WARN] No texture for addr=0x%08X\n", addr);
             }
             glEnd();
         }
 
-        // Keep wireframe overlay for debugging.
-        glDisable(GL_TEXTURE_2D);
+        f->glBindTexture(GL_TEXTURE_2D, texID);
+
         glBegin(GL_LINES);
         for (const auto& e : mesh.edges)
         {
